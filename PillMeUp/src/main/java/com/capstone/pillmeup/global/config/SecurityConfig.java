@@ -57,6 +57,7 @@ public class SecurityConfig {
      // 경로 인가 규칙 (JwtFilter의 whitelist와 반드시 일치)
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(
+        		"/api/health",
                 "/api/auth/**",
                 "/h2-console/**",
                 "/swagger-ui/**",
