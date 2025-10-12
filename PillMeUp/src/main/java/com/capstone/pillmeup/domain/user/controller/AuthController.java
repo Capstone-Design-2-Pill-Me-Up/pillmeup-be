@@ -12,22 +12,25 @@ import com.capstone.pillmeup.domain.user.service.AuthService;
 import com.capstone.pillmeup.global.exception.response.ApiResponse;
 import com.capstone.pillmeup.global.exception.security.jwt.dto.TokenResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Auth", description = "회원가입/로그인 API")
 public class AuthController {
 
 	private final AuthService authService;
 	
-	/** 회원가입 (LOCAL) */
+	@Operation(summary = "회원가입", description = "로컬 계정 회원가입을 수행합니다.")
     @PostMapping("/sign-up")
     public ApiResponse<MemberResponse> signup(@RequestBody SignUpRequest req) {
         return ApiResponse.success(authService.signup(req));
     }
 
-    /** 로그인 (LOCAL) */
+    @Operation(summary = "로그인", description = "로컬 계정 로그인을 수행하고 JWT 토큰을 발급합니다.")
     @PostMapping("/sign-in")
     public ApiResponse<TokenResponse> signin(@RequestBody SignInRequest req) {
         return ApiResponse.success(authService.signin(req));
