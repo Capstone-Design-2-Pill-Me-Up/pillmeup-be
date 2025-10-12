@@ -74,4 +74,3 @@ out/
 # IDE - VSCode
 # ---------------------
 .vscode/
-*.xml
