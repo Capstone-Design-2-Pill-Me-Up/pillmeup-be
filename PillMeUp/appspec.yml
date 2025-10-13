@@ -1,26 +1,14 @@
 version: 0.0
 os: linux
 files:
-  - source: / # S3에 업로드된 모든 파일
-    destination: /home/ubuntu/app/ # EC2 서버의 최종 배포 경로
-permissions:
-  - object: /home/ubuntu/app/
-    owner: ubuntu
-    group: ubuntu
-    mode: 755
-    type: directory
-  - object: /home/ubuntu/app/
-    pattern: "*.sh" # 모든 .sh 파일
-    owner: ubuntu
-    group: ubuntu
-    mode: 755
-    type: file
+  - source: /
+    destination: /home/ec2-user/app
 hooks:
-  ApplicationStop: # 기존 프로세스 종료
+  ApplicationStop:
     - location: scripts/stop.sh
-      timeout: 60
-      runas: ubuntu
-  ApplicationStart: # 새로운 애플리케이션 시작
+      timeout: 30
+      runas: ec2-user
+  ApplicationStart:
     - location: scripts/start.sh
       timeout: 60
-      runas: ubuntu
+      runas: ec2-user

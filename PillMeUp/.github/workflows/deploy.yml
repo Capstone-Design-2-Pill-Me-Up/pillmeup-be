@@ -1,61 +1,72 @@
-name: Deploy PillMeUp to EC2 via CodeDeploy
+name: Spring Boot CI/CD with CodeDeploy (Java 21)
 
 on:
   push:
     branches:
-      - feat/setup-cicd # 이 브랜치에 푸시할 때만 실행
+      - feat/setup-cicd
 
-# Actions 재시작용 주석
-env:
-  AWS_REGION: ap-northeast-2 # 서울 리전
-  S3_BUCKET_NAME: pillmeup-deploy-bucket # 실제 S3 버킷 이름으로 수정
-  CODE_DEPLOY_APP: pillmeup-app
-  CODE_DEPLOY_GROUP: pillmeup-deploy-group
-  JAR_FILE_NAME: PillMeUp-0.0.1-SNAPSHOT.jar # 실제 JAR 파일 이름으로 수정
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build and Deploy
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      # 코드 체크아웃
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      # JDK 21 설정
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
+          distribution: temurin
+          java-version: 21
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      # Gradle 캐싱
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
+      # Gradle 빌드 (테스트 제외 가능)
       - name: Build with Gradle
-        run: ./gradlew build -x test # 테스트는 배포 시간을 단축하기 위해 제외
+        run: ./gradlew clean build -x test
 
-      # AWS 인증 (GitHub Secrets에 등록된 키 사용)
+      # 빌드 산출물 압축
+      - name: Zip build files
+        run: |
+          mkdir -p deploy
+          cp build/libs/*.jar deploy/
+          cp appspec.yml deploy/
+          cp -r scripts deploy/
+          cd deploy && zip -r deploy.zip .
+
+      # AWS CLI 설정
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      # 배포에 필요한 파일들을 ZIP으로 묶음
-      - name: Zip deployment files
-        run: |
-          # 빌드된 JAR 파일과 appspec.yml, scripts 폴더를 묶음
-          zip -r deploy.zip build/libs/${{ env.JAR_FILE_NAME }} appspec.yml scripts
-
-      # S3에 업로드
+      # S3 업로드
       - name: Upload to S3
-        run: aws s3 cp deploy.zip s3://${{ env.S3_BUCKET_NAME }}/pillmeup/latest.zip
+        run: |
+          aws s3 cp deploy/deploy.zip s3://${{ secrets.S3_BUCKET }}/deploy/deploy.zip
 
-      # CodeDeploy 배포 시작 명령
-      - name: Create CodeDeploy Deployment
+      # CodeDeploy 실행
+      - name: Deploy with CodeDeploy
         run: |
           aws deploy create-deployment \
-            --application-name ${{ env.CODE_DEPLOY_APP }} \
-            --deployment-group-name ${{ env.CODE_DEPLOY_GROUP }} \
-            --s3-location bucket=${{ env.S3_BUCKET_NAME }},key=pillmeup/latest.zip,bundleType=zip \
-            --region ${{ env.AWS_REGION }}
+            --application-name ${{ secrets.CODEDEPLOY_APPLICATION_NAME }} \
+            --deployment-group-name ${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP }} \
+            --s3-location bucket=${{ secrets.S3_BUCKET }},bundleType=zip,key=deploy/deploy.zip \
+            --region ${{ secrets.AWS_REGION }}

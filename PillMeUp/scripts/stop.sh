@@ -1,12 +1,11 @@
 #!/bin/bash
-APP_NAME=PillMeUp-0.0.1-SNAPSHOT.jar
-# 애플리케이션 이름은 프로젝트명에 따라 정확히 수정
+echo "> 현재 실행 중인 애플리케이션 pid 확인"
+CURRENT_PID=$(pgrep -f 'java -jar')
 
-PID=$(ps -ef | grep $APP_NAME | grep -v grep | awk '{print $2}')
-
-if [ -z "$PID" ]; then
-    echo "> 실행 중인 애플리케이션 없음. 종료하지 않음."
+if [ -z "$CURRENT_PID" ]; then
+  echo "> 현재 구동 중인 애플리케이션이 없습니다."
 else
-    echo "> PID $PID 확인됨. kill -9 $PID"
-    kill -9 "$PID"
+  echo "> kill -15 $CURRENT_PID"
+  kill -15 $CURRENT_PID
+  sleep 5
 fi
