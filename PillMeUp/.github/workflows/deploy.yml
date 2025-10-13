@@ -1,0 +1,12 @@
+name: Test Deploy
+
+on:
+  push:
+    branches:
+      - feat/setup-cicd
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Working"
