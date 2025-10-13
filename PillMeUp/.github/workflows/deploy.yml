@@ -5,6 +5,7 @@ on:
     branches:
       - feat/setup-cicd # 이 브랜치에 푸시할 때만 실행
 
+# Actions 재시작용 주석
 env:
   AWS_REGION: ap-northeast-2 # 서울 리전
   S3_BUCKET_NAME: pillmeup-deploy-bucket # 실제 S3 버킷 이름으로 수정
