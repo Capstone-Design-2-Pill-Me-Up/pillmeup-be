@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
 public class OpenApiConfig {
@@ -18,6 +19,10 @@ public class OpenApiConfig {
 
 	@Bean
     public OpenAPI pillMeUpOpenAPI() {
+		
+		Server httpsServer = new Server();
+        httpsServer.setUrl("https://wonsandbox.cloud");
+		
         return new OpenAPI()
                 .info(new Info()
                         .title("Pill Me Up API")
@@ -37,6 +42,7 @@ public class OpenApiConfig {
                                         .scheme("bearer")
                                         .bearerFormat("JWT")))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME));
+        
     }
 	
 }
