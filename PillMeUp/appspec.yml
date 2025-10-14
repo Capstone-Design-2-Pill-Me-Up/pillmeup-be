@@ -1,0 +1,24 @@
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /home/ubuntu/app/
+
+permissions:
+  - object: /home/ubuntu/app/
+    pattern: "**"
+    owner: ubuntu
+    group: ubuntu
+
+hooks:
+  # 배포 전 서비스 중지
+  BeforeInstall:
+    - location: scripts/deploy.sh
+      timeout: 60
+      runas: ubuntu
+  # 배포 후 서비스 시작
+  ApplicationStart:
+    - location: scripts/deploy.sh
+      timeout: 60
+      runas: ubuntu
