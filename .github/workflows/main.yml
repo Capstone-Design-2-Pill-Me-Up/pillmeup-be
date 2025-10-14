@@ -12,10 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: PillMeUp
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -29,12 +25,12 @@ jobs:
 
       # 2. 빌드 및 테스트 (Gradle 기준)
       - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+        run: chmod +x PillMeUp/gradlew
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: PillMeUp/gradlew build -x test
 
       - name: Make zip file
-        run: zip -r deploy.zip appspec.yml scripts build/libs
+        run: zip -r deploy.zip PillMeUp appspec.yml scripts -x "*.git*" "*.github*"
 
       # 4. AWS 인증
       - name: Configure AWS credentials
@@ -47,7 +43,7 @@ jobs:
       # 5. S3에 아티팩트 업로드
       - name: Upload to S3
         # S3_BUCKET으로 변경된 이름 사용
-        run: aws s3 cp PillMeUp/deploy.zip s3://${{ secrets.S3_BUCKET }}/deploy/${GITHUB_SHA}.zip
+        run: aws s3 cp deploy.zip s3://${{ secrets.S3_BUCKET }}/deploy/${GITHUB_SHA}.zip
 
       # 6. CodeDeploy 배포 트리거
       - name: Deploy to EC2 via AWS CodeDeploy
