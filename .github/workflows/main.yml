@@ -1,4 +1,3 @@
-# 파일 경로: .github/workflows/main.yml
 name: CI/CD Pipeline
 
 on:
@@ -47,4 +46,4 @@ jobs:
 
       # 6. CodeDeploy 배포 트리거
       - name: Deploy to EC2 via AWS CodeDeploy
-        run: aws deploy create-deployment --application-name ${{ secrets.CODEDEPLOY_APPLICATION_NAME }} --deployment-group-name ${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP }} --s3-location bucket=${{ secrets.S3_BUCKET }},key=deploy/${GITHUB_SHA}.zip,bundleType=zip
+        run: aws deploy create-deployment --application-name ${{ secrets.CODE_DEPLOY_APPLICATION_NAME }} --deployment-group-name ${{ secrets.CODE_DEPLOY_DEPLOYMENT_GROUP }} --s3-location bucket=${{ secrets.S3_BUCKET }},key=deploy/${GITHUB_SHA}.zip,bundleType=zip
