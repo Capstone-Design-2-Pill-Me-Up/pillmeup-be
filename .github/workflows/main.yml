@@ -27,7 +27,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x PillMeUp/gradlew
       - name: Build with Gradle
-        run: PillMeUp/gradlew build -x test
+        run: PillMeUp/gradlew build -x test --project-dir PillMeUp
 
       - name: Make zip file
         run: zip -r deploy.zip PillMeUp appspec.yml scripts -x "*.git*" "*.github*"
