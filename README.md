@@ -96,15 +96,19 @@ Swagger UI:
 <br></br>
 
 ## 🧩 프로젝트 구조
+```plaintext
 src/
 ├── main/
-│   ├── domain/
-│   │   ├── drug/                # 의약품 도메인 (엔티티, 리포지토리, 서비스, 컨트롤러)
-│   │   ├── user/                # 사용자 인증/관리
-│   │   ├── history/             # 사용자 이력 관리
-│   │   ├── photo/               # 이미지 업로드 및 분석 결과 저장
-│   │   └── caution/             # DUR 주의사항 관리
+│   └── domain/
+│       ├── drug/                # 의약품 도메인 (엔티티, 리포지토리, 서비스, 컨트롤러)
+│       ├── user/                # 사용자 인증/관리
+│       ├── history/             # 사용자 이력 관리
+│       ├── photo/               # 이미지 업로드 및 분석 결과 저장
+│       └── caution/             # DUR 주의사항 관리
+│
 └── ├── global/
     ├── config/              # CORS, Swagger, Security 등 글로벌 설정
     ├── exception/           # 전역 예외 처리 및 응답 래퍼 (ApiResponse)
     └── security/            # JWT 인증 및 필터
+```
+
