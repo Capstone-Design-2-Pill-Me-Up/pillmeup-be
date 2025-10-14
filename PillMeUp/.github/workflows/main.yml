@@ -1,65 +1,50 @@
-name: CI/CD using Github Actions & AWS CodeDeploy
+# 파일 경로: .github/workflows/main.yml
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "feat/setup-cicd" ]
-  pull_request:
-    branches: [ "feat/setup-cicd" ]
-
-permissions:
-  contents: read
+    branches:
+      - main
+      - feat/setup-cicd
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # JDK setting - github actions에서 사용할 JDK 설정
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. 환경 설정 (Java 21)
       - name: Set up JDK 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      # gradle caching - 빌드 시간 향상
-      - name: Gradle Caching
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
+      # 2. 빌드 및 테스트 (Gradle 기준)
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
-      # gradle build
       - name: Build with Gradle
         run: ./gradlew build -x test
 
-      # make zip file
+      # 3. CodeDeploy를 위한 압축 (appspec.yml과 빌드 결과 포함)
       - name: Make zip file
-        run: zip -qq -r ./$GITHUB_SHA.zip .
-        shell: bash
+        # CodeDeploy 아티팩트에는 빌드 결과물(jar), appspec.yml, scripts 폴더가 포함되어야 합니다.
+        run: zip -r deploy.zip . -x "*\.git*" "*\.github*"
 
-      # AWS 사용자 정보 입력
+      # 4. AWS 인증
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ACCESS_KEY_SECRET }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # S3에 zip 파일 업로드
+      # 5. S3에 아티팩트 업로드
       - name: Upload to S3
-        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://${{ secrets.S3_BUCKET }}/deploy/$GITHUB_SHA.zip --source .
+        # S3_BUCKET으로 변경된 이름 사용
+        run: aws s3 cp deploy.zip s3://${{ secrets.S3_BUCKET }}/deploy/${GITHUB_SHA}.zip
 
-      # CodeDeploy에 배포 요청
-      - name: Code Deploy
-        run: aws deploy create-deployment --application-name ${{ secrets.CODEDEPLOY_APPLICATION_NAME }}
-          --deployment-config-name CodeDeployDefault.OneAtATime
-          --deployment-group-name ${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP }}
-          --s3-location bucket=${{ secrets.S3_BUCKET }},bundleType=zip,key=deploy/$GITHUB_SHA.zip
+      # 6. CodeDeploy 배포 트리거
+      - name: Deploy to EC2 via AWS CodeDeploy
+        run: aws deploy create-deployment --application-name ${{ secrets.CODE_DEPLOY_APPLICATION_NAME }} --deployment-group-name ${{ secrets.CODE_DEPLOY_DEPLOYMENT_GROUP }} --s3-location bucket=${{ secrets.S3_BUCKET }},key=deploy/${GITHUB_SHA}.zip,bundleType=zip
