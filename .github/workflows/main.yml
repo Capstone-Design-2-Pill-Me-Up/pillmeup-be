@@ -11,6 +11,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: PillMeUp
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -28,10 +33,8 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test
 
-      # 3. CodeDeploy를 위한 압축 (appspec.yml과 빌드 결과 포함)
       - name: Make zip file
-        # CodeDeploy 아티팩트에는 빌드 결과물(jar), appspec.yml, scripts 폴더가 포함되어야 합니다.
-        run: zip -r deploy.zip . -x "*\.git*" "*\.github*"
+        run: zip -r deploy.zip appspec.yml scripts build/libs
 
       # 4. AWS 인증
       - name: Configure AWS credentials
@@ -44,7 +47,7 @@ jobs:
       # 5. S3에 아티팩트 업로드
       - name: Upload to S3
         # S3_BUCKET으로 변경된 이름 사용
-        run: aws s3 cp deploy.zip s3://${{ secrets.S3_BUCKET }}/deploy/${GITHUB_SHA}.zip
+        run: aws s3 cp PillMeUp/deploy.zip s3://${{ secrets.S3_BUCKET }}/deploy/${GITHUB_SHA}.zip
 
       # 6. CodeDeploy 배포 트리거
       - name: Deploy to EC2 via AWS CodeDeploy
