@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - develop
-      - feat/setup-cicd
+      - feat/rds-connect
 
 jobs:
   build:
@@ -25,23 +25,33 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. 환경 설정 (Java 21)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      # 2. 빌드 및 테스트 (Gradle 기준)
+      # 빌드 및 테스트
       - name: Grant execute permission for gradlew
         run: chmod +x PillMeUp/gradlew
       - name: Build with Gradle
         run: PillMeUp/gradlew build -x test --project-dir PillMeUp
 
-      - name: Make zip file
-        run: zip -r deploy.zip PillMeUp appspec.yml scripts -x "*.git*" "*.github*"
+      # RDS Secrets을 환경 변수 파일로 생성
+      - name: Generate RDS Environment File
+        shell: bash
+        run: |
+          echo "RDS_URL=jdbc:mysql://${{ secrets.DB_ENDPOINT }}:3306/${{ secrets.DB_NAME }}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8" > rds-config.env
+          echo "RDS_USERNAME=${{ secrets.DB_USERNAME }}" >> rds-config.env
+          echo "RDS_PASSWORD=${{ secrets.DB_PASSWORD }}" >> rds-config.env
+          
+          echo "RDS config file created."
 
-      # 4. AWS 인증
+      # Zip 아티팩트
+      - name: Make zip file
+        run: zip -r deploy.zip PillMeUp appspec.yml scripts rds-config.env -x "*.git*" "*.github*"
+
+      # AWS 인증
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -49,11 +59,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 5. S3에 아티팩트 업로드
+      # S3에 업로드
       - name: Upload to S3
-        # S3_BUCKET으로 변경된 이름 사용
         run: aws s3 cp deploy.zip s3://${{ secrets.S3_BUCKET }}/deploy/${GITHUB_SHA}.zip
 
-      # 6. CodeDeploy 배포 트리거
+      # CodeDeploy 배포 트리거
       - name: Deploy to EC2 via AWS CodeDeploy
         run: aws deploy create-deployment --application-name ${{ secrets.CODE_DEPLOY_APPLICATION_NAME }} --deployment-group-name ${{ secrets.CODE_DEPLOY_DEPLOYMENT_GROUP }} --s3-location bucket=${{ secrets.S3_BUCKET }},key=deploy/${GITHUB_SHA}.zip,bundleType=zip
