@@ -1,7 +1,16 @@
 #!/bin/bash
 
 REPOSITORY=/home/ubuntu/app
+CONFIG_FILE="$REPOSITORY/rds-config.env"
 PROJECT_NAME=pillmeup
+
+JAR_PATH="$REPOSITORY/PillMeUp/build/libs"
+JAR_NAME=$(ls -tr $JAR_PATH/ | grep 'SNAPSHOT.jar' | tail -n 1)
+
+if [ -f "$CONFIG_FILE" ]; then
+    echo "Loading RDS configuration from $CONFIG_FILE"
+    source "$CONFIG_FILE"
+fi
 
 CURRENT_PID=$(pgrep -f ${PROJECT_NAME}*.jar)
 
@@ -15,14 +24,13 @@ else
     sleep 5
 fi
 
-echo "새 애플리케이션 배포 시작"
+echo "새 애플리케이션 배포 시작": $JAR_NAME"
 
-JAR_NAME=$(ls -tr $REPOSITORY/build/libs/ | grep 'SNAPSHOT.jar' | tail -n 1)
-
-echo "JAR Name: $JAR_NAME"
-
-# 백그라운드에서 Spring Boot 애플리케이션 실행
-# 로그 파일은 app.log에 기록
-nohup java -jar $REPOSITORY/build/libs/$JAR_NAME > $REPOSITORY/app.log 2>&1 &
+nohup java -jar \
+    -Dspring.profiles.active=prod \
+    -Dspring.datasource.url="$RDS_URL" \
+    -Dspring.datasource.username="$RDS_USERNAME" \
+    -Dspring.datasource.password="$RDS_PASSWORD" \
+    $JAR_PATH/$JAR_NAME > $REPOSITORY/app.log 2>&1 &
 
 echo "새 애플리케이션 배포 완료"

@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - develop
-      - feat/setup-cicd
+      - feat/rds-connect
 
 jobs:
   build:
@@ -38,8 +38,17 @@ jobs:
       - name: Build with Gradle
         run: PillMeUp/gradlew build -x test --project-dir PillMeUp
 
+      - name: Generate RDS Environment File
+        shell: bash
+        run: |
+          echo "RDS_URL=jdbc:mysql://${{ secrets.DB_ENDPOINT }}:3306/${{ secrets.DB_NAME }}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8" > rds-config.env
+          echo "RDS_USERNAME=${{ secrets.DB_USERNAME }}" >> rds-config.env
+          echo "RDS_PASSWORD=${{ secrets.DB_PASSWORD }}" >> rds-config.env
+        
+          echo "RDS config file created."
+
       - name: Make zip file
-        run: zip -r deploy.zip PillMeUp appspec.yml scripts -x "*.git*" "*.github*"
+        run: zip -r deploy.zip PillMeUp appspec.yml scripts rds-config.env -x "*.git*" "*.github*"
 
       # 4. AWS 인증
       - name: Configure AWS credentials
