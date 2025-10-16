@@ -50,8 +50,16 @@ jobs:
       - name: Change .jar name
         run: mv PillMeUp/build/libs/PillMeUp-0.0.1-SNAPSHOT.jar app.jar
 
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp app.jar deploy/
+          cp appspec.yml deploy/
+          cp deploy.sh deploy/
+          cp rds-config.env deploy/
+
       - name: Make zip file
-        run: zip -r deploy.zip app.jar appspec.yml scripts rds-config.env
+        run: zip -r ../deploy.zip . -C deploy
 
       # 4. AWS 인증
       - name: Configure AWS credentials
