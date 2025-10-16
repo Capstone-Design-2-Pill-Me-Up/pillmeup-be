@@ -1,49 +1,28 @@
 #!/bin/bash
 
+# 프로젝트 디렉토리 경로
 REPOSITORY=/home/ubuntu/app
+# 실행할 JAR 파일 이름
+JAR_NAME="app.jar"
+JAR_PATH="$REPOSITORY/$JAR_NAME"
 
-# === Stop Logic ===
-stop_app() {
-    echo "Stopping the existing application..."
+# 1. 기존 애플리케이션 중지
+echo ">> Stop existing application..."
+CURRENT_PID=$(pgrep -f $JAR_NAME)
 
-    CURRENT_PID=$(pgrep -f "app.jar")
-
-    if [ -z "$CURRENT_PID" ]; then
-        echo "No running application to stop."
-    else
-        echo "Killing process $CURRENT_PID"
-        kill -15 $CURRENT_PID
-        sleep 5
-    fi
-}
-
-# === Start Logic ===
-start_app() {
-    CONFIG_FILE="$REPOSITORY/rds-config.env"
-
-    JAR_PATH="$REPOSITORY/app.jar"
-
-    # RDS 설정 파일 로드
-    if [ -f "$CONFIG_FILE" ]; then
-        echo "Loading RDS configuration from $CONFIG_FILE"
-        source "$CONFIG_FILE"
-    else
-        echo "Error: RDS config file not found at $CONFIG_FILE"
-        exit 1
-    fi
-
-    echo "Starting new application deployment: $JAR_PATH"
-
-    # 애플리케이션 실행
-    nohup java -jar \
-        -Dspring.profiles.active=prod \
-        $JAR_PATH > $REPOSITORY/app.log 2>&1 &
-
-    echo "New application deployment complete."
-}
-
-if [ "$LIFECYCLE_EVENT" == "ApplicationStop" ]; then
-    stop_app
-elif [ "$LIFECYCLE_EVENT" == "ApplicationStart" ]; then
-    start_app
+if [ -z "$CURRENT_PID" ]; then
+    echo ">> No running application to stop."
+else
+    echo ">> Killing process: $CURRENT_PID"
+    kill -15 $CURRENT_PID
+    sleep 5
 fi
+
+# 2. 새 애플리케이션 배포
+echo ">> Start new application..."
+
+nohup java -jar \
+    -Dspring.profiles.active=prod \
+    $JAR_PATH > $REPOSITORY/app.log 2>&1 &
+
+echo ">> Application started."
