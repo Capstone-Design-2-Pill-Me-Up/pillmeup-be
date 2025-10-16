@@ -56,12 +56,10 @@ jobs:
           mkdir -p deploy
           cp app.jar deploy/
           cp rds-config.env deploy/
-          
-          cp PillMeUp/appspec.yml deploy/ || echo "appspec.yml not found, skipping..."
-          cp PillMeUp/deploy.sh deploy/ || echo "deploy.sh not found, skipping..."
-
-      - name: Grant execute permission for deploy.sh
-        run: chmod +x deploy/deploy.sh
+          cp PillMeUp/appspec.yml deploy/
+          cp PillMeUp/scripts/deploy.sh deploy/
+          chmod +x deploy/deploy.sh
+          echo "Deployment package prepared."
 
       - name: Zip deployment package
         run: |
