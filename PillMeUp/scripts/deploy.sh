@@ -36,7 +36,6 @@ start_app() {
 
     # 애플리케이션 실행
     nohup java -jar \
-        -Dspring.profiles.active=prod \
         -Dspring.datasource.url="$RDS_URL" \
         -Dspring.datasource.username="$RDS_USERNAME" \
         -Dspring.datasource.password="$RDS_PASSWORD" \
