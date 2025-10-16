@@ -14,11 +14,11 @@ permissions:
 hooks:
   # 배포 전 서비스 중지
   BeforeInstall:
-    - location: scripts/deploy.sh
+    - location: deploy.sh
       timeout: 60
       runas: ubuntu
   # 배포 후 서비스 시작
   ApplicationStart:
-    - location: scripts/deploy.sh
+    - location: deploy.sh
       timeout: 60
       runas: ubuntu

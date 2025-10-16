@@ -1,4 +1,4 @@
-#!/bin.bash
+#!/bin/bash
 
 REPOSITORY=/home/ubuntu/app
 

@@ -59,7 +59,12 @@ jobs:
           
           cp PillMeUp/appspec.yml deploy/ || echo "appspec.yml not found, skipping..."
           cp PillMeUp/deploy.sh deploy/ || echo "deploy.sh not found, skipping..."
-          
+
+      - name: Grant execute permission for deploy.sh
+        run: chmod +x deploy/deploy.sh
+
+      - name: Zip deployment package
+        run: |
           cd deploy
           zip -r ../deploy.zip .
           cd ..
