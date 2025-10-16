@@ -26,6 +26,7 @@ Thumbs.db
 **/application.yml
 **/application-*.properties
 **/application-*.yml
+!application-dev.properties
 
 # ---------------------
 # 빌드 아티팩트
