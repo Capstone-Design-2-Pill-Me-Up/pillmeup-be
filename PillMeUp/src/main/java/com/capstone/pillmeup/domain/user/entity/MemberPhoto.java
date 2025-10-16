@@ -65,7 +65,8 @@ public class MemberPhoto {
     @Column(name = "detected_name", length = 255)
     private String detected_name;
 
-    @Column(name = "confidence", precision = 5, scale = 4)
+    //precision, scale 옵션 배포 문제로 일단 주석 처리
+    @Column(name = "confidence"/* , precision = 5, scale = 4 */)
     private Double confidence;
 
     @Column(name = "created_at", updatable = false,
