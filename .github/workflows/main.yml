@@ -48,7 +48,7 @@ jobs:
           echo "RDS config file created."
 
       - name: Change .jar name
-        run: cp PillMeUp/build/libs/*.jar app.jar
+        run: cp PillMeUp/build/libs/PillMeUp-0.0.1-SNAPSHOT.jar app.jar
 
       - name: Make zip file
         run: zip -r deploy.zip app.jar appspec.yml scripts rds-config.env -x "*.git*" "*.github*"
