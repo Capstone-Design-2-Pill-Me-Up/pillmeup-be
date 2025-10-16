@@ -36,9 +36,7 @@ start_app() {
 
     # 애플리케이션 실행
     nohup java -jar \
-        -Dspring.datasource.url="$RDS_URL" \
-        -Dspring.datasource.username="$RDS_USERNAME" \
-        -Dspring.datasource.password="$RDS_PASSWORD" \
+        -Dspring.profiles.active=prod \
         $JAR_PATH > $REPOSITORY/app.log 2>&1 &
 
     echo "New application deployment complete."
