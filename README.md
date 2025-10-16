@@ -1,5 +1,5 @@
 # 💊 Pill Me Up Backend
-Vision AI 기반 의약품 식별 서비스 Pill Me Up의 백엔드 레포지토리
+Vision AI 기반 의약품 식별 서비스 Pill Me Up 백엔드 레포지토리
 
 <br></br>
 
@@ -9,6 +9,10 @@ Vision AI 기반 의약품 식별 서비스 Pill Me Up의 백엔드 레포지토
 
 Spring Boot 기반 REST API 서버로,
 AI 모델 서버, 식약처 DUR·e약은요 API, MySQL 데이터베이스와 연동됩니다.
+
+> ⚠️ 현재 식약처 DUR 및 e약은요 API가 장애로 인해 호출이 불가능한 상태이므로,  
+> **식약처 데이터포털에서 제공하는 CSV 데이터를 수집하여 MySQL 데이터베이스에 직접 적재하는 방식**으로  
+> 의약품 정보를 관리하고 있습니다.
 
 <br></br>
 
