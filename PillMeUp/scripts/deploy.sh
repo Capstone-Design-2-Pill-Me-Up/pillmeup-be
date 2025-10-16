@@ -4,7 +4,7 @@ REPOSITORY=/home/ubuntu/app
 CONFIG_FILE="$REPOSITORY/rds-config.env"
 PROJECT_NAME=pillmeup
 
-JAR_PATH="$REPOSITORY/PillMeUp/build/libs"
+JAR_PATH="$REPOSITORY"
 JAR_NAME=$(ls -tr $JAR_PATH/ | grep 'SNAPSHOT.jar' | tail -n 1)
 
 if [ -f "$CONFIG_FILE" ]; then
