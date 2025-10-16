@@ -36,7 +36,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x PillMeUp/gradlew
       - name: Build with Gradle
-        run: PillMeUp/gradlew build -x test --project-dir PillMeUp
+        run: ./PillMeUp/gradlew build -x test --project-dir PillMeUp
 
       - name: Generate RDS Environment File
         shell: bash
@@ -48,10 +48,10 @@ jobs:
           echo "RDS config file created."
 
       - name: Change .jar name
-        run: cp PillMeUp/build/libs/PillMeUp-0.0.1-SNAPSHOT.jar app.jar
+        run: mv PillMeUp/build/libs/PillMeUp-0.0.1-SNAPSHOT.jar app.jar
 
       - name: Make zip file
-        run: zip -r deploy.zip app.jar appspec.yml scripts rds-config.env -x "*.git*" "*.github*"
+        run: zip -r deploy.zip app.jar appspec.yml scripts rds-config.env
 
       # 4. AWS 인증
       - name: Configure AWS credentials
