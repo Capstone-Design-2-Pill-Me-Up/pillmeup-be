@@ -52,14 +52,17 @@ jobs:
 
       - name: Create deployment package
         run: |
+          set -e
           mkdir -p deploy
           cp app.jar deploy/
-          cp appspec.yml deploy/
-          cp deploy.sh deploy/
           cp rds-config.env deploy/
-
-      - name: Make zip file
-        run: zip -r ../deploy.zip . -C deploy
+          
+          cp PillMeUp/appspec.yml deploy/ || echo "appspec.yml not found, skipping..."
+          cp PillMeUp/deploy.sh deploy/ || echo "deploy.sh not found, skipping..."
+          
+          cd deploy
+          zip -r ../deploy.zip .
+          cd ..
 
       # 4. AWS 인증
       - name: Configure AWS credentials
