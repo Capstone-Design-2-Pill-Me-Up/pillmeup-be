@@ -22,8 +22,10 @@ Thumbs.db
 # ---------------------
 # Spring Boot 설정 파일 (추가)
 # ---------------------
-**/application-prod.properties
-**/application-prod.yml
+!application.properties
+**/application-*.properties
+**/application-*.yml
+**/application.yml
 
 # ---------------------
 # 빌드 아티팩트
