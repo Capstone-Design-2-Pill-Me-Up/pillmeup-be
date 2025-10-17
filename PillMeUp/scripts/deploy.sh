@@ -21,8 +21,6 @@ fi
 echo ">> 새 애플리케이션을 시작합니다..."
 
 # Spring Boot는 EC2에 설정된 환경 변수(DB_PASSWORD 등)를 자동으로 인식합니다.
-nohup java -jar \
-    -Dspring.profiles.active=prod \
-    $JAR_PATH > $APP_DIR/app.log 2>&1 &
+nohup java -jar $JAR_PATH > $APP_DIR/app.log 2>&1 &
 
 echo ">> 애플리케이션이 시작되었습니다."
