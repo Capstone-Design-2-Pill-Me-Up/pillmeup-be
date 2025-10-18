@@ -59,7 +59,7 @@ public class MemberHistory {
     private Drug itemSeq;
 
     @Lob
-    @Column(name = "gpt_caution_summary")
+    @Column(name = "gpt_caution_summary", columnDefinition = "TEXT")
     private String gptCautionSummary;
 
     @Column(name = "created_at", updatable = false,

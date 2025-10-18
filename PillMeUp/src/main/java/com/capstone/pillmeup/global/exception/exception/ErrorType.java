@@ -37,6 +37,9 @@ public enum ErrorType {
     GPT_DATA_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GPT가 유효한 데이터를 생성하지 못했습니다."),
     GPT_SUMMARY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GPT 전반적인 요약 생성 중 오류가 발생했습니다."),
 
+    // ──────────────── AI ────────────────
+    AI_SERVER_COMMUNICATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI 서버와 통신 중 오류가 발생했습니다."),
+    
     // ──────────────── COMMON ────────────────
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알 수 없는 내부 오류입니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근이 금지되었습니다."),

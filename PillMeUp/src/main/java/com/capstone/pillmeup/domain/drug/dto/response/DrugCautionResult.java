@@ -13,5 +13,6 @@ public class DrugCautionResult {
 
 	private List<DrugCautionResponse> foundDrugs;
     private List<String> missingItems;
+    private Long historyId;
 	
 }

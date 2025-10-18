@@ -40,17 +40,11 @@ public class DrugCautionService {
     private final MemberHistoryRepository memberHistoryRepository;
     private final ChatGptService chatGptService;
 
-    /**
-     * AI 분석 결과 기반 약품 주의사항 전체 조회
-     * @param request AI 모델이 반환한 의약품 item_seq 리스트
-     * @param memberId 로그인 사용자 ID
-     * @param photoId 해당 촬영 이미지 ID
-     */
     @Transactional
     public DrugCautionResult getDrugCautions(DrugRequest request, Long memberId, Long photoId) {
 
         // 1. 요청값 검증
-    	if (request == null || request.getItemSeqList() == null || request.getItemSeqList().isEmpty()) {
+        if (request == null || request.getItemSeqList() == null || request.getItemSeqList().isEmpty()) {
             throw new CoreException(ErrorType.VALIDATION_ERROR, "itemSeqList가 전달되지 않았습니다.");
         }
 
@@ -59,16 +53,8 @@ public class DrugCautionService {
 
         // 3. 약품 기본정보 조회
         List<Drug> drugs = drugRepository.findByItemSeqIn(dedupItemSeqs);
-        List<String> foundItemSeqs = drugs.stream()
-                .map(Drug::getItemSeq)
-                .toList();
-
-        List<String> missingItems = dedupItemSeqs.stream()
-                .filter(seq -> !foundItemSeqs.contains(seq))
-                .toList();
-
         if (drugs.isEmpty()) {
-            throw new CoreException(ErrorType.DRUG_NOT_FOUND, "요청한 모든 의약품이 존재하지 않습니다.");
+            throw new CoreException(ErrorType.DRUG_NOT_FOUND, "요청한 의약품이 존재하지 않습니다.");
         }
 
         // 4. DUR 주의사항 조회
@@ -77,29 +63,26 @@ public class DrugCautionService {
             throw new CoreException(ErrorType.DRUG_TYPE_NOT_FOUND);
         }
 
-        // 5. 회원 사진 조회 (Optional)
+        // 5. 업로드된 사진 정보 매핑 (historyId가 없는 최초 호출 시 photoId 기준으로 조회)
         Map<String, MemberPhotoDto> photoByItemSeq = new HashMap<>();
-        if (memberId != null) {
-            List<MemberPhoto> photos = memberPhotoRepository.findByMemberId_MemberIdAndItemSeq_ItemSeqIn(memberId, dedupItemSeqs);
-            if (photos == null) {
-                throw new CoreException(ErrorType.PHOTO_NOT_FOUND);
-            }
+        if (memberId != null && photoId != null) {
+            MemberPhoto photo = memberPhotoRepository.findById(photoId)
+                    .orElseThrow(() -> new CoreException(ErrorType.PHOTO_NOT_FOUND, "해당 사진이 존재하지 않습니다."));
 
-            photoByItemSeq = photos.stream().collect(Collectors.toMap(
-                    p -> p.getItemSeq().getItemSeq(),
-                    p -> MemberPhotoDto.builder()
-                            .photoId(p.getPhotoId())
-                            .historyId(p.getHistoryId() != null ? p.getHistoryId().getHistoryId() : null)
-                            .memberId(p.getMemberId() != null ? p.getMemberId().getMemberId() : null)
-                            .itemSeq(p.getItemSeq() != null ? p.getItemSeq().getItemSeq() : null)
-                            .fileName(p.getFileName())
-                            .fileUrl(p.getFileUrl()) // TODO: S3 연동 전 null
-                            .detectedName(p.getDetectedName())
-                            .confidence(p.getConfidence())
-                            .createdAt(p.getCreatedAt() != null ? p.getCreatedAt().toString() : null)
-                            .build(),
-                    (a, b) -> a // 중복 키시 첫 번째 유지
-            ));
+            photoByItemSeq.put(
+                photo.getItemSeq().getItemSeq(),
+                MemberPhotoDto.builder()
+                        .photoId(photo.getPhotoId())
+                        .historyId(photo.getHistoryId() != null ? photo.getHistoryId().getHistoryId() : null)
+                        .memberId(photo.getMemberId() != null ? photo.getMemberId().getMemberId() : null)
+                        .itemSeq(photo.getItemSeq() != null ? photo.getItemSeq().getItemSeq() : null)
+                        .fileName(photo.getFileName())
+                        .fileUrl(photo.getFileUrl())
+                        .detectedName(photo.getDetectedName())
+                        .confidence(photo.getConfidence())
+                        .createdAt(photo.getCreatedAt() != null ? photo.getCreatedAt().toString() : null)
+                        .build()
+            );
         }
 
         // 6. GPT 개별 DUR 주의사항 보완
@@ -108,20 +91,20 @@ public class DrugCautionService {
                 try {
                     String itemNameForPrompt = type.getDrug().getItemName() != null
                             ? type.getDrug().getItemName()
-                            : type.getDrug().getItemSeq(); // fallback 처리
-
+                            : type.getDrug().getItemSeq();
+                    
                     String generated = chatGptService.generateDrugTypeDescription(
                             itemNameForPrompt,
                             type.getTypeCode() != null ? type.getTypeCode().name() : "",
                             type.getTypeName()
                     );
-
+                    
                     type.setDescription(generated);
                     drugTypeRepository.save(type);
-
+                    
                 } catch (Exception e) {
                     throw new CoreException(ErrorType.DRUG_CAUTION_GENERATION_FAILED,
-                            "GPT 요청 실패 (" + type.getDrug().getItemSeq() + "): " + e.getMessage());
+                            "GPT 요청 실패 (" + type.getDrug().getItemSeq() + ")");
                 }
             }
         }
@@ -131,51 +114,50 @@ public class DrugCautionService {
         try {
             List<String> itemNames = drugs.stream().map(Drug::getItemName).filter(Objects::nonNull).toList();
             List<String> typeNames = types.stream().map(DrugType::getTypeName).filter(Objects::nonNull).distinct().toList();
-
-            overallSummary = itemNames.isEmpty()
-                    ? "의약품 이름이 존재하지 않아 요약할 수 없습니다."
-                    : chatGptService.generateOverallCaution(itemNames, typeNames);
-
+            overallSummary = chatGptService.generateOverallCaution(itemNames, typeNames);
         } catch (Exception e) {
             throw new CoreException(ErrorType.GPT_SUMMARY_FAILED);
         }
 
-        // 8. 조회 이력 저장
-        if (memberId != null) {
+        // 8. MemberHistory 생성 (AI 분석 완료 후 새로 생성되는 구조)
+        Long savedHistoryId = null;
+        if (memberId != null && photoId != null) {
             try {
-                String itemSeqForHistory = null;
+                // DB에 실제 존재하는 Drug 엔티티 조회
+                Drug linkedDrug = drugRepository.findByItemSeq(dedupItemSeqs.get(0))
+                        .orElseThrow(() -> new CoreException(ErrorType.DRUG_NOT_FOUND));
 
-                if (photoId != null) {
-                    MemberPhoto photo = memberPhotoRepository.findById(photoId)
-                            .orElseThrow(() -> new CoreException(ErrorType.PHOTO_NOT_FOUND));
-                    if (photo.getItemSeq() != null) {
-                        itemSeqForHistory = photo.getItemSeq().getItemSeq();
-                    }
-                }
+                // 업로드된 사진 조회
+                MemberPhoto photo = memberPhotoRepository.findById(photoId)
+                        .orElseThrow(() -> new CoreException(ErrorType.PHOTO_NOT_FOUND));
 
-                if (itemSeqForHistory == null && !dedupItemSeqs.isEmpty()) {
-                    itemSeqForHistory = dedupItemSeqs.get(0);
-                }
-
-                if (itemSeqForHistory != null) {
+                // 이미 해당 사진에 history가 연결되어 있다면 재사용
+                if (photo.getHistoryId() != null) {
+                    savedHistoryId = photo.getHistoryId().getHistoryId();
+                } else {
+                    // 기존 이력이 없을 때만 새로 생성
                     MemberHistory history = MemberHistory.builder()
                             .memberId(Member.builder().memberId(memberId).build())
-                            .itemSeq(Drug.builder().itemSeq(itemSeqForHistory).build())
+                            .itemSeq(linkedDrug)
                             .gptCautionSummary(overallSummary)
                             .build();
+
                     memberHistoryRepository.save(history);
+                    savedHistoryId = history.getHistoryId();
+
+                    // 새로 생성된 history와 사진 연결
+                    photo.linkHistory(history);
+                    memberPhotoRepository.save(photo);
                 }
-            } catch (CoreException e) {
-                throw e; // 명시적 예외 재전달
+
             } catch (Exception e) {
-                throw new CoreException(ErrorType.HISTORY_SAVE_FAILED);
+                throw new CoreException(ErrorType.HISTORY_SAVE_FAILED, "복용 이력 저장 중 오류가 발생했습니다.");
             }
         }
 
         // 9. 응답 변환
         final String finalOverallSummary = overallSummary;
         final Map<String, MemberPhotoDto> finalPhotoByItemSeq = photoByItemSeq;
-
         Map<String, List<DrugType>> typesBySeq = types.stream()
                 .collect(Collectors.groupingBy(dt -> dt.getDrug().getItemSeq()));
 
@@ -190,9 +172,14 @@ public class DrugCautionService {
 
         return DrugCautionResult.builder()
                 .foundDrugs(responses)
-                .missingItems(missingItems)
+                .missingItems(
+                    dedupItemSeqs.stream()
+                        .filter(seq -> !drugs.stream().map(Drug::getItemSeq).toList().contains(seq))
+                        .toList()
+                )
+                .historyId(savedHistoryId)
                 .build();
         
     }
-	
+    	
 }
