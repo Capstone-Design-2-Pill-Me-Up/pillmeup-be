@@ -31,7 +31,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
     // 토큰 없이 접근 허용할 경로 (필요에 맞게 수정)
     private static final List<String> WHITELIST = List.of(
-    		"/api/auth/**",
+    		"/api/health",
+            "/api/auth/**",
+            "/api/test/gpt/**",
             "/h2-console/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
