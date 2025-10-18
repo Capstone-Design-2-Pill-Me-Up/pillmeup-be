@@ -29,42 +29,39 @@ public class DrugCautionController {
 	private final DrugCautionService drugCautionService;
 	private final DrugDetailService drugDetailService;
 
-    @Operation(
-        summary = "AI 분석 기반 약품 주의사항 조회",
-        description = """
-            Vision AI 분석 결과로부터 반환된 item_seq 리스트를 입력받아 
-            각 의약품의 DUR 주의사항, GPT 요약 주의사항, 사진 정보를 통합 조회합니다.
-            """
-    )
-    @PostMapping("/caution")
-    public ApiResponse<DrugCautionResult> getDrugCautions(
-    		@Parameter(description = "AI 모델이 반환한 의약품 item_seq 리스트", example = "[\"202002850\", \"195700013\"]")
-            @RequestBody DrugRequest request,
+	@Operation(
+	        summary = "AI 분석 기반 약품 주의사항 조회",
+	        description = "AI가 반환한 item_seq 리스트를 기반으로 DUR 주의사항과 GPT 요약 결과를 조회합니다. "
+	                    + "historyId가 없는 경우에도 photoId만으로 조회가 가능합니다."
+	    )
+	    @PostMapping("/caution")
+	    public ApiResponse<DrugCautionResult> getDrugCautions(
+	            @Parameter(description = "AI 모델이 반환한 의약품 item_seq 리스트", example = "[\"202002850\", \"195700013\"]")
+	            @RequestBody DrugRequest request,
 
-            @Parameter(description = "로그인한 회원의 ID (선택)", example = "1")
-            @RequestParam(name = "memberId", required = false) Long memberId,
+	            @Parameter(description = "로그인한 회원의 ID (선택)", example = "1")
+	            @RequestParam(name = "memberId", required = false) Long memberId,
 
-            @Parameter(description = "촬영된 사진 ID (선택)", example = "10")
-            @RequestParam(name = "photoId", required = false) Long photoId
-    ) {
-        return ApiResponse.success(drugCautionService.getDrugCautions(request, memberId, photoId));
-    }
-    
-    @Operation(
-        summary = "특정 의약품 상세정보 조회",
-        description = """
-            품목코드(item_seq)를 기반으로 특정 의약품의 상세 정보를 조회합니다.
-            결과에는 효능·효과, 용법·용량, 사용상 주의사항, 상호작용, 부작용,
-            DUR 주의사항(예: 병용금기, 임부금기 등)이 모두 포함됩니다.
-            누락된 필드는 GPT를 통해 자동 보완됩니다.
-            """
-    )
-    @GetMapping("/{itemSeq}")
-    public ApiResponse<DrugDetailResponse> getDrugDetail(
-            @Parameter(description = "조회할 의약품의 품목코드", example = "195700013")
-            @PathVariable("itemSeq") String itemSeq
-    ) {
-        return ApiResponse.success(drugDetailService.getDrugDetail(itemSeq));
-    }
+	            @Parameter(description = "촬영된 사진 ID (선택)", example = "10")
+	            @RequestParam(name = "photoId", required = false) Long photoId
+	    ) {
+	        return ApiResponse.success(drugCautionService.getDrugCautions(request, memberId, photoId));
+	    }
+
+	    @Operation(
+	        summary = "특정 의약품 상세정보 조회",
+	        description = "품목코드(item_seq)를 기반으로 의약품 상세정보와 DUR 주의사항을 조회합니다. "
+	                    + "historyId가 존재하는 경우 해당 이력에 저장된 사진 URL을 함께 반환합니다."
+	    )
+	    @GetMapping("/{itemSeq}")
+	    public ApiResponse<DrugDetailResponse> getDrugDetail(
+	            @Parameter(description = "조회할 의약품의 품목코드", example = "195700013")
+	            @PathVariable("itemSeq") String itemSeq,
+
+	            @Parameter(description = "조회할 이력의 ID (선택)", example = "1")
+	            @RequestParam(name = "historyId", required = false) Long historyId
+	    ) {
+	        return ApiResponse.success(drugDetailService.getDrugDetail(itemSeq, historyId));
+	    }
 	
 }

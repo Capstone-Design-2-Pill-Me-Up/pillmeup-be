@@ -26,5 +26,7 @@ public class DrugDetailResponse {
 
     // 주의사항 목록 (DUR)
     private List<DrugTypeResponse> cautions;
+    
+    private String fileUrl;
 	
 }

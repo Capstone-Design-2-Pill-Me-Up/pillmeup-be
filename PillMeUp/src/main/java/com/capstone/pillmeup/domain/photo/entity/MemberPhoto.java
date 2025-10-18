@@ -81,5 +81,9 @@ public class MemberPhoto {
             this.createdAt = LocalDateTime.now();
         }
     }
+
+	public void linkHistory(MemberHistory history) {
+		this.historyId = history;
+	}
 	
 }
