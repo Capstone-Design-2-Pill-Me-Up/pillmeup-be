@@ -1,8 +1,8 @@
-package com.capstone.pillmeup.domain.user.repository;
+package com.capstone.pillmeup.domain.photo.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.capstone.pillmeup.domain.user.entity.MemberPhoto;
+import com.capstone.pillmeup.domain.photo.entity.MemberPhoto;
 
 public interface MemberPhotoRepository extends JpaRepository<MemberPhoto, Long> {
 
