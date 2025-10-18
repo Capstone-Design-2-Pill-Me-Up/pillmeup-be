@@ -22,7 +22,11 @@ public enum ErrorType {
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근이 금지되었습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
     JSON_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JSON 처리 중 오류가 발생했습니다."),
-    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다.")
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    
+    // GPT API
+    GPT_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GPT API 호출 중 오류가 발생했습니다."),
+    GPT_DATA_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GPT가 유효한 데이터를 생성하지 못했습니다.")
     
     ;
 	
