@@ -1,28 +1,26 @@
 #!/bin/bash
 
-REPOSITORY=/home/ubuntu/app
-PROJECT_NAME=pillmeup
+# 변수 설정
+APP_DIR="/home/ubuntu/app"
+JAR_NAME="app.jar"
+JAR_PATH="$APP_DIR/$JAR_NAME"
 
-CURRENT_PID=$(pgrep -f ${PROJECT_NAME}*.jar)
-
-echo "실행 중인 애플리케이션 PID: $CURRENT_PID"
+# 기존 애플리케이션 중지
+echo ">> 기존 애플리케이션을 중지합니다..."
+CURRENT_PID=$(pgrep -f $JAR_NAME)
 
 if [ -z "$CURRENT_PID" ]; then
-    echo "현재 실행 중인 애플리케이션이 없습니다."
+    echo ">> 현재 실행 중인 애플리케이션이 없습니다."
 else
-    echo "kill -15 $CURRENT_PID"
+    echo ">> 프로세스 종료: $CURRENT_PID"
     kill -15 $CURRENT_PID
     sleep 5
 fi
 
-echo "새 애플리케이션 배포 시작"
+# 새 애플리케이션 시작
+echo ">> 새 애플리케이션을 시작합니다..."
 
-JAR_NAME=$(ls -tr $REPOSITORY/build/libs/ | grep 'SNAPSHOT.jar' | tail -n 1)
+# Spring Boot는 EC2에 설정된 환경 변수(DB_PASSWORD 등)를 자동으로 인식합니다.
+nohup java -jar $JAR_PATH > $APP_DIR/app.log 2>&1 &
 
-echo "JAR Name: $JAR_NAME"
-
-# 백그라운드에서 Spring Boot 애플리케이션 실행
-# 로그 파일은 app.log에 기록
-nohup java -jar $REPOSITORY/build/libs/$JAR_NAME > $REPOSITORY/app.log 2>&1 &
-
-echo "새 애플리케이션 배포 완료"
+echo ">> 애플리케이션이 시작되었습니다."
