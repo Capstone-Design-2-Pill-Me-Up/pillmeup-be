@@ -106,15 +106,22 @@ public class DrugCautionService {
         for (DrugType type : types) {
             if (type.getDescription() == null || type.getDescription().isBlank()) {
                 try {
+                    String itemNameForPrompt = type.getDrug().getItemName() != null
+                            ? type.getDrug().getItemName()
+                            : type.getDrug().getItemSeq(); // fallback 처리
+
                     String generated = chatGptService.generateDrugTypeDescription(
-                            type.getDrug().getItemSeq(),
+                            itemNameForPrompt,
                             type.getTypeCode() != null ? type.getTypeCode().name() : "",
                             type.getTypeName()
                     );
+
                     type.setDescription(generated);
                     drugTypeRepository.save(type);
+
                 } catch (Exception e) {
-                    throw new CoreException(ErrorType.DRUG_CAUTION_GENERATION_FAILED);
+                    throw new CoreException(ErrorType.DRUG_CAUTION_GENERATION_FAILED,
+                            "GPT 요청 실패 (" + type.getDrug().getItemSeq() + "): " + e.getMessage());
                 }
             }
         }
