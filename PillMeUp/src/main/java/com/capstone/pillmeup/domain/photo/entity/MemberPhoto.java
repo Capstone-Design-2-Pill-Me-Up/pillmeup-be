@@ -41,43 +41,43 @@ public class MemberPhoto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long photo_id;
+    private Long photoId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "history_id", nullable = false,
         foreignKey = @ForeignKey(name = "fk_photo_history"))
-    private MemberHistory history_id;
+    private MemberHistory historyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false,
         foreignKey = @ForeignKey(name = "fk_photo_member"))
-    private Member member_id;
+    private Member memberId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_seq", referencedColumnName = "item_seq", nullable = false,
         foreignKey = @ForeignKey(name = "fk_photo_drug"))
-    private Drug item_seq;
+    private Drug itemSeq;
 
     @Column(name = "file_name", nullable = false, length = 255)
-    private String file_name;
+    private String fileName;
 
     @Column(name = "file_url", length = 500)
-    private String file_url;
+    private String fileUrl;
 
     @Column(name = "detected_name", length = 255)
-    private String detected_name;
+    private String detectedName;
 
     @Column(name = "confidence", precision = 5)
     private Double confidence;
 
     @Column(name = "created_at", updatable = false,
             columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        if (this.created_at == null) {
-            this.created_at = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
         }
     }
 	

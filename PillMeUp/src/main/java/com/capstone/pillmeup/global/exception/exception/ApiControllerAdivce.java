@@ -4,8 +4,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.capstone.pillmeup.global.exception.response.ApiResponse;
-
 @RestControllerAdvice
 public class ApiControllerAdivce {
 

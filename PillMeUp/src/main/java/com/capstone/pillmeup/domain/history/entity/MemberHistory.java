@@ -45,35 +45,34 @@ public class MemberHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long history_id;
+    private Long historyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false,
         foreignKey = @ForeignKey(name = "fk_history_member"))
-    private Member member_id;
+    private Member memberId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_seq", referencedColumnName = "item_seq", nullable = false,
         foreignKey = @ForeignKey(name = "fk_history_drug"))
-    private Drug item_seq;
+    private Drug itemSeq;
 
     @Lob
     @Column(name = "gpt_caution_summary")
-    private String gpt_caution_summary;
+    private String gptCautionSummary;
 
     @Column(name = "created_at", updatable = false,
             columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
-    /** 1:N 연관관계 (member_photo.history_id 에 매핑) */
-    @OneToMany(mappedBy = "history_id", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "historyId", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<MemberPhoto> member_photos = new ArrayList<>();
+    private List<MemberPhoto> memberPhotos = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        if (this.created_at == null) {
-            this.created_at = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
         }
     }
     
