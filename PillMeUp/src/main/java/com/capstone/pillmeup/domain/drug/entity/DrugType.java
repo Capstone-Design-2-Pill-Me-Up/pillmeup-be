@@ -48,10 +48,6 @@ public class DrugType {
     @Column(name = "type_id")
     private Long typeId;
 
-    /**
-     * FK: drug.item_seq(UNIQUE)을 참조
-     * referencedColumnName 으로 자연키(UNIQUE 컬럼) 매핑
-     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "item_seq", referencedColumnName = "item_seq", nullable = false,
                 foreignKey = @ForeignKey(name = "fk_drug_type_drug_item_seq"))
@@ -71,5 +67,5 @@ public class DrugType {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-	
+
 }
