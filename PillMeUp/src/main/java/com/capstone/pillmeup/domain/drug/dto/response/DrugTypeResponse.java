@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DrugTypeInfo {
+public class DrugTypeResponse {
 	
 	private String typeCode;      // DUR 코드 (A~I)
     private String typeName;      // DUR 항목명 (예: 임부금기, 병용금기)

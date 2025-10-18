@@ -24,7 +24,7 @@ public class DrugCautionResponse {
     private String overallCaution;
 
     private MemberPhotoDto photo;           // 촬영 이미지 정보 (S3 연동 전 null)
-    private List<DrugTypeInfo> warnings;    // DUR 주의사항 목록
+    private List<DrugTypeResponse> warnings;    // DUR 주의사항 목록
 
     public static DrugCautionResponse of(
             Drug drug,
@@ -37,9 +37,9 @@ public class DrugCautionResponse {
                 .itemName(drug.getItemName())
                 .entpName(drug.getEntpName())
                 .overallCaution(overallCaution)
-                .photo(photo)  // ✅ 사진 정보 추가
+                .photo(photo)
                 .warnings(types.stream()
-                        .map(t -> DrugTypeInfo.builder()
+                        .map(t -> DrugTypeResponse.builder()
                                 .typeCode(t.getTypeCode() != null ? t.getTypeCode().name() : null)
                                 .typeName(t.getTypeName())
                                 .description(t.getDescription())
