@@ -41,6 +41,7 @@ public class MemberPhoto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "photo_id")
     private Long photoId;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -45,6 +45,7 @@ public class MemberHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "history_id")
     private Long historyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
