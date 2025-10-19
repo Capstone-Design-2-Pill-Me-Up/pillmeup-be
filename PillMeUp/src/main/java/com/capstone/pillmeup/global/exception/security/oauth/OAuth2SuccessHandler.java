@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import com.capstone.pillmeup.domain.user.entity.Provider;
 import com.capstone.pillmeup.global.exception.response.ApiResponse;
 import com.capstone.pillmeup.global.exception.security.jwt.JwtProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +28,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper objectMapper;
 
     @Value("${app.oauth2.success-redirect}")
-    private String successRedirectBase; // http://localhost:3000/social/callback
+    private String successRedirectBase;
     
     // true면 항상 JSON으로 응답 (운영에서는 false 권장)
     @Value("${app.oauth2.debug-json:false}")
@@ -37,8 +38,11 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res, Authentication auth) throws IOException {
 
         OAuth2User principal = (OAuth2User) auth.getPrincipal();
+        
         Object memberIdObj = principal.getAttribute("memberId");
         Object providerObj = principal.getAttribute("provider");
+        Object providerIdObj = principal.getAttribute("providerId");
+        
         if (memberIdObj == null) {
             res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
@@ -47,28 +51,30 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         Long memberId = (memberIdObj instanceof Number)
                 ? ((Number) memberIdObj).longValue()
                 : Long.valueOf(memberIdObj.toString());
-        String provider = providerObj == null ? null : providerObj.toString();
 
-        String access = jwtProvider.generateAccessToken(memberId); // AT만 발급
+        Provider provider = Provider.valueOf(providerObj.toString().toUpperCase());
+        String providerId = providerIdObj == null ? "" : providerIdObj.toString();
 
-        // 디버그 JSON 모드이거나, 리다이렉트 경로가 비어있으면 JSON으로 바로 응답
+        String accessToken = jwtProvider.generateAccessToken(memberId, provider, providerId);
+
+        // 디버그 JSON 응답
         if (debugJson || successRedirectBase == null || successRedirectBase.isBlank()) {
             res.setStatus(HttpServletResponse.SC_OK);
             res.setContentType("application/json;charset=UTF-8");
             objectMapper.writeValue(
                 res.getOutputStream(),
                 ApiResponse.success(Map.of(
-                    "accessToken", access,
+                    "accessToken", accessToken,
                     "memberId", memberId,
-                    "provider", provider
+                    "provider", provider.name(),
+                    "providerId", providerId
                 ))
             );
             return;
         }
 
-        // 프론트로 리다이렉트
-        String redirect = successRedirectBase + "?token=" + URLEncoder.encode(access, StandardCharsets.UTF_8);
+        // 프론트로 리다이렉트 (토큰 전달)
+        String redirect = successRedirectBase + "?token=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
         res.sendRedirect(redirect);
-        
     }
 }
