@@ -1,8 +1,10 @@
 package com.capstone.pillmeup.domain.user.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.capstone.pillmeup.domain.user.dto.request.SignInRequest;
 import com.capstone.pillmeup.domain.user.dto.request.SignUpRequest;
@@ -24,6 +26,12 @@ public class AuthService {
 	private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    
+    @Value("${spring.security.oauth2.client.registration.naver.client-id:}")
+    private String naverClientId;
+
+    @Value("${spring.security.oauth2.client.registration.naver.client-secret:}")
+    private String naverClientSecret;
 	
     // 회원가입 (LOCAL)
     @Transactional
@@ -79,5 +87,77 @@ public class AuthService {
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
     }
+    
+    @Transactional(readOnly = true)
+    public void logout(String token, String provider) {
+        if (provider == null || provider.equalsIgnoreCase("LOCAL")) {
+            handleLocalLogout(token);
+        } else if (provider.equalsIgnoreCase("KAKAO")) {
+            handleKakaoLogout(token);
+        } else if (provider.equalsIgnoreCase("NAVER")) {
+            handleNaverLogout(token);
+        } else {
+            throw new CoreException(ErrorType.VALIDATION_ERROR, "지원하지 않는 provider 값입니다.");
+        }
+    }
+
+    // Local 로그아웃: JWT 검증 후 성공 처리
+    private void handleLocalLogout(String token) {
+        if (token == null || !token.startsWith("Bearer ")) {
+            throw new CoreException(ErrorType.INVALID_TOKEN);
+        }
+
+        String rawToken = token.substring(7);
+        if (!jwtProvider.validateToken(rawToken)) {
+            throw new CoreException(ErrorType.INVALID_TOKEN);
+        }
+
+        // 서버 세션이 없기 때문에 여기서는 단순히 성공 반환
+        // (Redis를 사용하면 블랙리스트 저장 가능)
+    }
+
+    // Kakao 로그아웃
+    private void handleKakaoLogout(String accessToken) {
+        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+            throw new CoreException(ErrorType.INVALID_TOKEN);
+        }
+
+        String rawToken = accessToken.substring(7);
+        try {
+            WebClient.create("https://kapi.kakao.com/v1/user/logout")
+                    .post()
+                    .header("Authorization", "Bearer " + rawToken)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+        } catch (Exception e) {
+            throw new CoreException(ErrorType.EXTERNAL_API_ERROR_KAKAO);
+        }
+    }
+
+    // Naver 로그아웃
+    private void handleNaverLogout(String accessToken) {
+        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+            throw new CoreException(ErrorType.INVALID_TOKEN);
+        }
+
+        String rawToken = accessToken.substring(7);
+        try {
+            WebClient.create("https://nid.naver.com/oauth2.0/token")
+                    .post()
+                    .uri(uriBuilder -> uriBuilder
+                            .queryParam("grant_type", "delete")
+                            .queryParam("client_id", naverClientId)
+                            .queryParam("client_secret", naverClientSecret)
+                            .queryParam("access_token", rawToken)
+                            .build())
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+        } catch (Exception e) {
+            throw new CoreException(ErrorType.EXTERNAL_API_ERROR_NAVER);
+        }
+    }
+
     
 }
