@@ -7,6 +7,9 @@ import java.util.Date;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.capstone.pillmeup.domain.user.entity.Provider;
+
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
@@ -29,49 +32,39 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /**
-     * AccessToken 생성 (role은 항상 USER)
-     * sub(주체)는 memberId 문자열
-     */
-    public String generateAccessToken(Long memberId) {
+    public String generateAccessToken(Long memberId, Provider provider, String providerId) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + (accessTokenValidityInSeconds * 1000));
 
         return Jwts.builder()
-                .setSubject(String.valueOf(memberId)) // sub = memberId
-                .claim("role", "USER")           // 고정 권한
+                .setSubject(String.valueOf(memberId))
+                .claim("provider", provider.name())
+                .claim("providerId", providerId)
+                .claim("role", "USER")
                 .setIssuedAt(now)
                 .setExpiration(exp)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    /**
-     * 토큰 유효성 검증 (서명/형식/만료)
-     * - 유효: true, 아니면 false
-     * - 만료/변조/형식오류 모두 false
-     */
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException | UnsupportedJwtException
                  | IllegalArgumentException e) {
-            return false; // 서명/형식 문제
+            return false;
         } catch (ExpiredJwtException e) {
-            return false; // 만료
+            return false;
         }
     }
 
-    /** 토큰에서 memberId(sub) 추출 */
-    public Long getMemberId(String token) {
-        String sub = Jwts.parserBuilder()
+    public Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-        return Long.valueOf(sub);
+                .getBody();
     }
 
 }

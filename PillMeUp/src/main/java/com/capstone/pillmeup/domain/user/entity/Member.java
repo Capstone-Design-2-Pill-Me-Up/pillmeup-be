@@ -109,4 +109,15 @@ public class Member {
     public void deactivate() { this.isActive = false; }
     public void markDeleted() { this.isDeleted = true; }
     
+    // 이름 변경
+    public void changeName(String newName) {
+        this.name = newName;
+    }
+
+    // 비밀번호 변경 (LOCAL 전용)
+    public void changePassword(String newEncodedPassword) {
+        this.password = newEncodedPassword;
+    }
+
+    
 }

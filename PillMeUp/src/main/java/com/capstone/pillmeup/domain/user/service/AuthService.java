@@ -61,7 +61,7 @@ public class AuthService {
     // 로그인 (LOCAL)
     @Transactional(readOnly = true)
     public TokenResponse signin(SignInRequest req) {
-        // 수동 검증
+    	
         if (req == null || isBlank(req.getEmail()) || isBlank(req.getPassword())) {
             throw new CoreException(ErrorType.VALIDATION_ERROR);
         }
@@ -70,7 +70,6 @@ public class AuthService {
                 .orElseThrow(() -> new CoreException(ErrorType.MEMBER_NOT_FOUND));
 
         if (member.isDeleted()) {
-            // 탈퇴 계정은 동일 응답으로 숨김
             throw new CoreException(ErrorType.MEMBER_NOT_FOUND);
         }
         if (!member.isActive()) {
@@ -80,8 +79,13 @@ public class AuthService {
             throw new CoreException(ErrorType.PASSWORD_MISMATCH);
         }
 
-        String accessToken = jwtProvider.generateAccessToken(member.getMemberId());
+        String accessToken = jwtProvider.generateAccessToken(
+                member.getMemberId(),
+                member.getProvider(),
+                member.getProviderId()
+        );
         return new TokenResponse(accessToken);
+        
     }
     
     private static boolean isBlank(String s) {
@@ -113,7 +117,6 @@ public class AuthService {
         }
 
         // 서버 세션이 없기 때문에 여기서는 단순히 성공 반환
-        // (Redis를 사용하면 블랙리스트 저장 가능)
     }
 
     // Kakao 로그아웃

@@ -16,6 +16,8 @@ public enum ErrorType {
     MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 멤버입니다."),
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않습니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다."),
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "이름은 비워둘 수 없습니다."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다."),
 
     // ──────────────── PHOTO ────────────────
     PHOTO_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 photoId에 대한 사진이 존재하지 않습니다."),
