@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.capstone.pillmeup.global.exception.exception.CoreException;
@@ -34,12 +35,13 @@ public class S3Service {
             metadata.setContentLength(file.getSize());
             metadata.setContentType(file.getContentType());
 
+            // PutObjectRequest + 공개 읽기 권한 추가
             PutObjectRequest request = new PutObjectRequest(
                     bucket,
                     fileName,
                     file.getInputStream(),
                     metadata
-            );
+            ).withCannedAcl(CannedAccessControlList.PublicRead);
 
             // 업로드 수행
             amazonS3.putObject(request);
