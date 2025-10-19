@@ -32,6 +32,10 @@ public enum ErrorType {
     HISTORY_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "복용 이력 저장 중 오류가 발생했습니다."),
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원의 복용 이력을 찾을 수 없습니다."),
 
+    // ──────────────── EXTERNAL API ────────────────
+    EXTERNAL_API_ERROR_KAKAO(HttpStatus.BAD_GATEWAY, "카카오 API 통신 중 오류가 발생했습니다."),
+    EXTERNAL_API_ERROR_NAVER(HttpStatus.BAD_GATEWAY, "네이버 API 통신 중 오류가 발생했습니다."),
+    
     // ──────────────── GPT ────────────────
     GPT_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GPT API 호출 중 오류가 발생했습니다."),
     GPT_DATA_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GPT가 유효한 데이터를 생성하지 못했습니다."),
