@@ -25,20 +25,8 @@ public class PhotoController {
 	private final PhotoService photoService;
 	
 	@Operation(
-        summary = "알약 사진 업로드 + AI 분석",
-        description = """
-            사용자가 업로드한 사진을 분석하여 여러 알약을 감지하고 item_seq 리스트를 반환합니다.
-
-            ### 저장 구조
-            - 사진 1장 업로드 → member_history 1개 생성
-            - 감지된 알약이 N개 → member_photo N개 생성 (알약당 1 row)
-            - member_history는 대표 itemSeq를 저장하지 않음
-              → 실제 감지된 모든 값은 member_photo에 저장됨
-
-            ### 조회 방식
-            - 히스토리 목록 조회 → 사용자가 어떤 사진을 언제 조회했는지 표시
-            - 히스토리 상세 조회 → 연결된 모든 member_photo(itemSeq 정보 포함) 조회 가능
-            """
+        summary = "알약 사진 업로드 및 분석",
+        description = "사용자가 촬영하거나 업로드한 알약 이미지를 S3에 저장하고, AI 분석 준비를 수행합니다."
     )
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     public ApiResponse<PhotoUploadResponse> uploadPhoto(
