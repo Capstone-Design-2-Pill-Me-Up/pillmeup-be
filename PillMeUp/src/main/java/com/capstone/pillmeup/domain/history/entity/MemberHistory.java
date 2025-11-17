@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.capstone.pillmeup.domain.drug.entity.Drug;
 import com.capstone.pillmeup.domain.photo.entity.MemberPhoto;
 import com.capstone.pillmeup.domain.user.entity.Member;
 
@@ -34,7 +33,6 @@ import lombok.NoArgsConstructor;
     name = "member_history",
     indexes = {
         @Index(name = "idx_history_member_created", columnList = "member_id, created_at"),
-        @Index(name = "idx_history_item_seq", columnList = "item_seq")
     }
 )
 @Getter
@@ -53,11 +51,6 @@ public class MemberHistory {
         foreignKey = @ForeignKey(name = "fk_history_member"))
     private Member memberId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_seq", referencedColumnName = "item_seq", nullable = false,
-        foreignKey = @ForeignKey(name = "fk_history_drug"))
-    private Drug itemSeq;
-
     @Lob
     @Column(name = "gpt_caution_summary", columnDefinition = "TEXT")
     private String gptCautionSummary;
@@ -75,6 +68,10 @@ public class MemberHistory {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }
+    }
+    
+    public void updateSummary(String summary) {
+        this.gptCautionSummary = summary;
     }
     
 }

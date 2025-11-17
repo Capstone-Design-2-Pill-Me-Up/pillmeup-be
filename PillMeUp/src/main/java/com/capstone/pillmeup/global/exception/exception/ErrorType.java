@@ -44,8 +44,11 @@ public enum ErrorType {
     GPT_SUMMARY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GPT 전반적인 요약 생성 중 오류가 발생했습니다."),
 
     // ──────────────── AI ────────────────
-    AI_SERVER_COMMUNICATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI 서버와 통신 중 오류가 발생했습니다."),
-    
+    AI_REQUEST_FAILED(HttpStatus.BAD_GATEWAY, "AI 서버 요청 중 오류가 발생했습니다."),
+    AI_RESPONSE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "AI 서버 응답 형식이 올바르지 않습니다."),
+    AI_ITEMSEQ_NOT_FOUND(HttpStatus.NOT_FOUND, "AI 모델이 item_seq를 반환하지 못했습니다."),
+    AI_SERVER_COMMUNICATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI 서버와 통신 중 알 수 없는 오류가 발생했습니다."),
+
     // ──────────────── COMMON ────────────────
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알 수 없는 내부 오류입니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근이 금지되었습니다."),

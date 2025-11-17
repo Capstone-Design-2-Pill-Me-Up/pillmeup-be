@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -63,121 +62,110 @@ public class DrugCautionService {
             throw new CoreException(ErrorType.DRUG_TYPE_NOT_FOUND);
         }
 
-        // 5. 업로드된 사진 정보 매핑 (historyId가 없는 최초 호출 시 photoId 기준으로 조회)
+        // 5. Photo 조회 → DTO 매핑
         Map<String, MemberPhotoDto> photoByItemSeq = new HashMap<>();
-        if (memberId != null && photoId != null) {
-            MemberPhoto photo = memberPhotoRepository.findById(photoId)
-                    .orElseThrow(() -> new CoreException(ErrorType.PHOTO_NOT_FOUND, "해당 사진이 존재하지 않습니다."));
+        MemberHistory history = null;
 
+        if (memberId != null && photoId != null) {
+
+            MemberPhoto photo = memberPhotoRepository.findById(photoId)
+                    .orElseThrow(() -> new CoreException(ErrorType.PHOTO_NOT_FOUND));
+
+            // history 존재하면 그대로 사용
+            if (photo.getHistoryId() != null) {
+                history = photo.getHistoryId();
+            }
+            // 없으면 새로 생성
+            else {
+                history = MemberHistory.builder()
+                        .memberId(Member.builder().memberId(memberId).build())
+                        .gptCautionSummary(null)  // 나중에 아래에서 저장됨
+                        .build();
+
+                memberHistoryRepository.save(history);
+
+                // 사진과 연결
+                photo.linkHistory(history);
+                memberPhotoRepository.save(photo);
+            }
+
+            // DTO 매핑
             photoByItemSeq.put(
-                photo.getItemSeq().getItemSeq(),
-                MemberPhotoDto.builder()
-                        .photoId(photo.getPhotoId())
-                        .historyId(photo.getHistoryId() != null ? photo.getHistoryId().getHistoryId() : null)
-                        .memberId(photo.getMemberId() != null ? photo.getMemberId().getMemberId() : null)
-                        .itemSeq(photo.getItemSeq() != null ? photo.getItemSeq().getItemSeq() : null)
-                        .fileName(photo.getFileName())
-                        .fileUrl(photo.getFileUrl())
-                        .detectedName(photo.getDetectedName())
-                        .confidence(photo.getConfidence())
-                        .createdAt(photo.getCreatedAt() != null ? photo.getCreatedAt().toString() : null)
-                        .build()
+                    photo.getItemSeq().getItemSeq(),
+                    MemberPhotoDto.builder()
+                            .photoId(photo.getPhotoId())
+                            .historyId(history.getHistoryId())
+                            .memberId(photo.getMemberId().getMemberId())
+                            .itemSeq(photo.getItemSeq().getItemSeq())
+                            .fileName(photo.getFileName())
+                            .fileUrl(photo.getFileUrl())
+                            .detectedName(photo.getDetectedName())
+                            .confidence(photo.getConfidence())
+                            .createdAt(photo.getCreatedAt().toString())
+                            .build()
             );
         }
 
-        // 6. GPT 개별 DUR 주의사항 보완
+        // 6. GPT 개별 DUR 설명 누락시 보완
         for (DrugType type : types) {
             if (type.getDescription() == null || type.getDescription().isBlank()) {
+            	
                 try {
-                    String itemNameForPrompt = type.getDrug().getItemName() != null
-                            ? type.getDrug().getItemName()
-                            : type.getDrug().getItemSeq();
-                    
                     String generated = chatGptService.generateDrugTypeDescription(
-                            itemNameForPrompt,
-                            type.getTypeCode() != null ? type.getTypeCode().name() : "",
+                            type.getDrug().getItemName(),
+                            type.getTypeCode().name(),
                             type.getTypeName()
                     );
-                    
                     type.setDescription(generated);
                     drugTypeRepository.save(type);
-                    
+
                 } catch (Exception e) {
                     throw new CoreException(ErrorType.DRUG_CAUTION_GENERATION_FAILED,
                             "GPT 요청 실패 (" + type.getDrug().getItemSeq() + ")");
                 }
+                
             }
         }
 
-        // 7. GPT 전반적 주의사항 요약
+        // 7. GPT 종합 요약 생성
         String overallSummary;
         try {
-            List<String> itemNames = drugs.stream().map(Drug::getItemName).filter(Objects::nonNull).toList();
-            List<String> typeNames = types.stream().map(DrugType::getTypeName).filter(Objects::nonNull).distinct().toList();
-            overallSummary = chatGptService.generateOverallCaution(itemNames, typeNames);
+            List<String> itemNames = drugs.stream().map(Drug::getItemName).toList();
+            List<String> cautionNames = types.stream().map(DrugType::getTypeName).distinct().toList();
+
+            overallSummary = chatGptService.generateOverallCaution(itemNames, cautionNames);
+
         } catch (Exception e) {
             throw new CoreException(ErrorType.GPT_SUMMARY_FAILED);
         }
 
-        // 8. MemberHistory 생성 (AI 분석 완료 후 새로 생성되는 구조)
-        Long savedHistoryId = null;
-        if (memberId != null && photoId != null) {
-            try {
-                // DB에 실제 존재하는 Drug 엔티티 조회
-                Drug linkedDrug = drugRepository.findByItemSeq(dedupItemSeqs.get(0))
-                        .orElseThrow(() -> new CoreException(ErrorType.DRUG_NOT_FOUND));
-
-                // 업로드된 사진 조회
-                MemberPhoto photo = memberPhotoRepository.findById(photoId)
-                        .orElseThrow(() -> new CoreException(ErrorType.PHOTO_NOT_FOUND));
-
-                // 이미 해당 사진에 history가 연결되어 있다면 재사용
-                if (photo.getHistoryId() != null) {
-                    savedHistoryId = photo.getHistoryId().getHistoryId();
-                } else {
-                    // 기존 이력이 없을 때만 새로 생성
-                    MemberHistory history = MemberHistory.builder()
-                            .memberId(Member.builder().memberId(memberId).build())
-                            .itemSeq(linkedDrug)
-                            .gptCautionSummary(overallSummary)
-                            .build();
-
-                    memberHistoryRepository.save(history);
-                    savedHistoryId = history.getHistoryId();
-
-                    // 새로 생성된 history와 사진 연결
-                    photo.linkHistory(history);
-                    memberPhotoRepository.save(photo);
-                }
-
-            } catch (Exception e) {
-                throw new CoreException(ErrorType.HISTORY_SAVE_FAILED, "복용 이력 저장 중 오류가 발생했습니다.");
-            }
+        // 8. 생성된 요약을 MemberHistory에 저장
+        if (history != null) {
+            history.updateSummary(overallSummary);
         }
 
+
         // 9. 응답 변환
-        final String finalOverallSummary = overallSummary;
-        final Map<String, MemberPhotoDto> finalPhotoByItemSeq = photoByItemSeq;
         Map<String, List<DrugType>> typesBySeq = types.stream()
                 .collect(Collectors.groupingBy(dt -> dt.getDrug().getItemSeq()));
 
         List<DrugCautionResponse> responses = drugs.stream()
-                .map(drug -> {
-                    List<DrugType> t = typesBySeq.getOrDefault(drug.getItemSeq(), Collections.emptyList());
-                    MemberPhotoDto photo = finalPhotoByItemSeq.get(drug.getItemSeq());
-                    return DrugCautionResponse.of(drug, t, finalOverallSummary, photo);
-                })
-                .filter(Objects::nonNull)
+                .map(drug -> DrugCautionResponse.of(
+                        drug,
+                        typesBySeq.getOrDefault(drug.getItemSeq(), Collections.emptyList()),
+                        overallSummary,
+                        photoByItemSeq.get(drug.getItemSeq())
+                ))
                 .toList();
 
         return DrugCautionResult.builder()
                 .foundDrugs(responses)
                 .missingItems(
-                    dedupItemSeqs.stream()
-                        .filter(seq -> !drugs.stream().map(Drug::getItemSeq).toList().contains(seq))
-                        .toList()
+                        dedupItemSeqs.stream()
+                                .filter(seq -> drugs.stream().noneMatch(d -> d.getItemSeq().equals(seq)))
+                                .toList()
                 )
-                .historyId(savedHistoryId)
+                .historyId(history != null ? history.getHistoryId() : null)
                 .build();
         
     }
