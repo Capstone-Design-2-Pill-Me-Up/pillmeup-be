@@ -28,6 +28,7 @@ public class MemberProfileService {
                 .orElseThrow(() -> new CoreException(ErrorType.MEMBER_NOT_FOUND));
 
         return MemberProfileResponse.builder()
+        		.memberId(member.getMemberId())
                 .email(member.getEmail())
                 .name(member.getName())
                 .provider(member.getProvider())
