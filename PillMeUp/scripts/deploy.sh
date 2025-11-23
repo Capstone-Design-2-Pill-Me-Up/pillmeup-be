@@ -5,6 +5,9 @@ APP_DIR="/home/ubuntu/app"
 JAR_NAME="app.jar"
 JAR_PATH="$APP_DIR/$JAR_NAME"
 
+sudo chown ubuntu:ubuntu "$APP_DIR" -R 
+sudo chmod +x "$JAR_PATH"
+
 # 기존 애플리케이션 중지
 echo ">> 기존 애플리케이션을 중지합니다..."
 CURRENT_PID=$(pgrep -f $JAR_NAME)
