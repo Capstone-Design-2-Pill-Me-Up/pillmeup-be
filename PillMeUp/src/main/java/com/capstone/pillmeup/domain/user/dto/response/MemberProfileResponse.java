@@ -9,6 +9,7 @@ import lombok.Data;
 @Builder
 public class MemberProfileResponse {
 
+	private Long memberId;
 	private String email;
 	private String name;
 	private Provider provider;
