@@ -39,6 +39,14 @@ public class DrugCautionService {
     private final MemberHistoryRepository memberHistoryRepository;
     private final ChatGptService chatGptService;
 
+    private String cleanText(String text) {
+        if (text == null) return null;
+        return text
+                .replace("?", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+    
     @Transactional
     public DrugCautionResult getDrugCautions(DrugRequest request, Long memberId, Long photoId) {
 
@@ -116,7 +124,7 @@ public class DrugCautionService {
                             type.getTypeCode().name(),
                             type.getTypeName()
                     );
-                    type.setDescription(generated);
+                    type.setDescription(cleanText(generated));
                     drugTypeRepository.save(type);
 
                 } catch (Exception e) {
@@ -125,37 +133,51 @@ public class DrugCautionService {
                 }
                 
             }
+            else {
+				type.setDescription(cleanText(type.getDescription()));
+			}
         }
 
         // 7. GPT 종합 요약 생성
-        String overallSummary;
+        String overallSummaryTemp;
         try {
             List<String> itemNames = drugs.stream().map(Drug::getItemName).toList();
             List<String> cautionNames = types.stream().map(DrugType::getTypeName).distinct().toList();
 
-            overallSummary = chatGptService.generateOverallCaution(itemNames, cautionNames);
+            overallSummaryTemp = chatGptService.generateOverallCaution(itemNames, cautionNames);
 
         } catch (Exception e) {
             throw new CoreException(ErrorType.GPT_SUMMARY_FAILED);
         }
+
+        // cleanText 적용
+        final String overallSummary = cleanText(overallSummaryTemp);
 
         // 8. 생성된 요약을 MemberHistory에 저장
         if (history != null) {
             history.updateSummary(overallSummary);
         }
 
-
         // 9. 응답 변환
         Map<String, List<DrugType>> typesBySeq = types.stream()
                 .collect(Collectors.groupingBy(dt -> dt.getDrug().getItemSeq()));
 
         List<DrugCautionResponse> responses = drugs.stream()
-                .map(drug -> DrugCautionResponse.of(
-                        drug,
-                        typesBySeq.getOrDefault(drug.getItemSeq(), Collections.emptyList()),
-                        overallSummary,
-                        photoByItemSeq.get(drug.getItemSeq())
-                ))
+        		.map(drug -> {
+
+                    drug.setEfcyQesitm(cleanText(drug.getEfcyQesitm()));
+                    drug.setUseMethodQesitm(cleanText(drug.getUseMethodQesitm()));
+                    drug.setAtpnQesitm(cleanText(drug.getAtpnQesitm()));
+                    drug.setIntrcQesitm(cleanText(drug.getIntrcQesitm()));
+                    drug.setSeQesitm(cleanText(drug.getSeQesitm()));
+
+                    return DrugCautionResponse.of(
+                            drug,
+                            typesBySeq.getOrDefault(drug.getItemSeq(), Collections.emptyList()),
+                            overallSummary,
+                            photoByItemSeq.get(drug.getItemSeq())
+                    );
+                })
                 .toList();
 
         return DrugCautionResult.builder()
