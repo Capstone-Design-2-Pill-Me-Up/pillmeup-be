@@ -48,7 +48,7 @@ public class PhotoService {
 
         // 2. 단일 history 생성 → 모든 파일이 같은 history로 묶임
         MemberHistory history = MemberHistory.builder()
-                .memberId(member)
+                .member(member)
                 .gptCautionSummary(null)
                 .createdAt(LocalDateTime.now())
                 .build();

@@ -13,6 +13,8 @@ import com.capstone.pillmeup.domain.drug.entity.Drug;
 import com.capstone.pillmeup.domain.drug.entity.DrugType;
 import com.capstone.pillmeup.domain.drug.repository.DrugRepository;
 import com.capstone.pillmeup.domain.drug.repository.DrugTypeRepository;
+import com.capstone.pillmeup.domain.history.entity.MemberHistory;
+import com.capstone.pillmeup.domain.history.repository.MemberHistoryRepository;
 import com.capstone.pillmeup.domain.photo.entity.MemberPhoto;
 import com.capstone.pillmeup.domain.photo.repository.MemberPhotoRepository;
 import com.capstone.pillmeup.global.exception.exception.CoreException;
@@ -27,6 +29,7 @@ public class DrugDetailService {
 	private final DrugRepository drugRepository;
     private final DrugTypeRepository drugTypeRepository;
     private final MemberPhotoRepository memberPhotoRepository;
+    private final MemberHistoryRepository memberHistoryRepository;
     private final ChatGptService chatGptService;
     
     private String cleanText(String text) {
@@ -99,11 +102,19 @@ public class DrugDetailService {
 
         // 4. historyId가 있을 경우 S3 이미지 조회
         String fileUrl = null;
+        String gptSummary = null;
+        
         if (historyId != null) {
+        	
             fileUrl = memberPhotoRepository
             		.findTopByHistoryId_HistoryIdOrderByCreatedAtDesc(historyId)
                     .map(MemberPhoto::getFileUrl)
                     .orElse(null);
+            
+            gptSummary = memberHistoryRepository.findById(historyId)
+                    .map(MemberHistory::getGptCautionSummary)
+                    .orElse(null);
+            
         }
 
         // 5. DTO 변환
@@ -121,6 +132,7 @@ public class DrugDetailService {
                 .intrcQesitm(cleanText(drug.getIntrcQesitm()))
                 .seQesitm(cleanText(drug.getSeQesitm()))
                 .fileUrl(fileUrl)
+                .gptCautionSummary(gptSummary)
 
                 .cautions(
                         types.stream()

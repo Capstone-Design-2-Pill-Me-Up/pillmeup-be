@@ -49,7 +49,7 @@ public class MemberHistory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false,
         foreignKey = @ForeignKey(name = "fk_history_member"))
-    private Member memberId;
+    private Member member;
 
     @Lob
     @Column(name = "gpt_caution_summary", columnDefinition = "TEXT")

@@ -14,5 +14,7 @@ public interface MemberPhotoRepository extends JpaRepository<MemberPhoto, Long> 
 
     // 특정 이력 기준 최신 1건 (상세보기에서 사용)
     Optional<MemberPhoto> findTopByHistoryId_HistoryIdOrderByCreatedAtDesc(Long historyId);
-	
+    
+    List<MemberPhoto> findByHistoryId_HistoryId(Long historyId);
+
 }

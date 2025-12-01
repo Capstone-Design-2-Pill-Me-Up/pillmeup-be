@@ -28,5 +28,7 @@ public class DrugDetailResponse {
     private List<DrugTypeResponse> cautions;
     
     private String fileUrl;
+    
+    private String gptCautionSummary;		// gpt 종합 분석
 	
 }
