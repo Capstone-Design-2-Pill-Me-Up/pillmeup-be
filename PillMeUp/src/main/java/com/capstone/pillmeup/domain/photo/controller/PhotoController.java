@@ -1,5 +1,7 @@
 package com.capstone.pillmeup.domain.photo.controller;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,19 +27,21 @@ public class PhotoController {
 	private final PhotoService photoService;
 	
 	@Operation(
-        summary = "알약 사진 업로드 및 분석",
-        description = "사용자가 촬영하거나 업로드한 알약 이미지를 S3에 저장하고, AI 분석 준비를 수행합니다."
-    )
-    @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
-    public ApiResponse<PhotoUploadResponse> uploadPhoto(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam(name = "memberId") Long memberId,
+		summary = "알약 사진 업로드 및 분석", 
+        description = "단일 또는 여러 장의 알약 이미지를 업로드하고 AI 분석을 수행합니다."
+        )
+	@PostMapping(value = "/upload", consumes = {"multipart/form-data"})
+	public ApiResponse<List<PhotoUploadResponse>> uploadPhoto(
 
-            @Parameter(description = "업로드할 알약 이미지 파일", required = true)
-            @RequestPart(name = "file") MultipartFile file) {
+	        @Parameter(description = "사용자 ID", required = true, example = "1")
+	        @RequestParam(name = "memberId") Long memberId,
 
-        PhotoUploadResponse response = photoService.uploadAndAnalyze(memberId, file);
-        return ApiResponse.success(response);
-    }
+	        @Parameter(description = "업로드할 알약 이미지 파일 (단일 or 다중)", required = true)
+	        @RequestPart(name = "file") List<MultipartFile> files
+	) {
+
+	    List<PhotoUploadResponse> responses = photoService.uploadAndAnalyzeMulti(memberId, files);
+	    return ApiResponse.success(responses);
+	}
 	
 }
