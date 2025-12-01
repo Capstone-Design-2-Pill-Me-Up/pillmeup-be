@@ -34,30 +34,19 @@ public class PhotoService {
 	private final MemberRepository memberRepository;
 	private final DrugRepository drugRepository;
 
-    // 사진 업로드 + AI 모델 호출 + DB 저장 전체 자동 처리
-    @Transactional
-    public PhotoUploadResponse uploadAndAnalyze(Long memberId, MultipartFile file) {
+	// 다중 파일 업로드 처리
+	@Transactional
+	public List<PhotoUploadResponse> uploadAndAnalyzeMulti(Long memberId, List<MultipartFile> files) {
+
+        if (files == null || files.isEmpty()) {
+            throw new CoreException(ErrorType.PHOTO_NOT_FOUND);
+        }
 
         // 1. 사용자 검증
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CoreException(ErrorType.MEMBER_NOT_FOUND));
 
-        // 2. 이미지 파일 검증
-        validateImage(file);
-
-        // 3. S3 업로드
-        String fileUrl = s3Service.uploadFile(file);
-
-        // 4. temp 파일 생성 (FastAPI multipart 전송용)
-        File tempFile = convertToTempFile(file);
-
-        // 5. AI 서버 호출 → item_seq 리스트 반환
-        List<String> itemSeqList = aiModelClient.sendImageToAi(tempFile)
-                .stream().distinct().toList();
-
-        tempFile.delete(); // temp 파일 제거
-
-        // 6. MemberHistory 생성
+        // 2. 단일 history 생성 → 모든 파일이 같은 history로 묶임
         MemberHistory history = MemberHistory.builder()
                 .memberId(member)
                 .gptCautionSummary(null)
@@ -65,7 +54,30 @@ public class PhotoService {
                 .build();
         memberHistoryRepository.save(history);
 
-        // 7. 감지된 알약 개수만큼 MemberPhoto 저장
+        // 3. 모든 파일을 같은 historyId로 처리
+        return files.stream()
+                .map(file -> uploadSingleFile(member, history, file))
+                .toList();
+    }
+	
+    private PhotoUploadResponse uploadSingleFile(Member member, MemberHistory history, MultipartFile file) {
+
+        // 1. 이미지 파일 검증
+        validateImage(file);
+
+        // 2. S3 업로드
+        String fileUrl = s3Service.uploadFile(file);
+
+        // 3. FastAPI 전송용 temp 파일 생성
+        File tempFile = convertToTempFile(file);
+
+        // 4. AI 분석 수행 → item_seq 리스트 반환
+        List<String> itemSeqList = aiModelClient.sendImageToAi(tempFile)
+                .stream().distinct().toList();
+
+        tempFile.delete();
+
+        // 5. 감지된 모든 약품 MemberPhoto로 저장
         for (String seq : itemSeqList) {
             Drug drug = getOrCreateDrug(seq);
 
@@ -83,7 +95,7 @@ public class PhotoService {
             memberPhotoRepository.save(photo);
         }
 
-        // 8. 응답 반환
+        // 6. 응답 반환
         return PhotoUploadResponse.builder()
                 .fileUrl(fileUrl)
                 .detectedName(itemSeqList.isEmpty() ? null : itemSeqList.get(0))
@@ -91,9 +103,8 @@ public class PhotoService {
                 .message("AI 분석 완료")
                 .itemSeqList(itemSeqList)
                 .build();
-        
     }
-
+	
     // 이미지 파일 검증
     private void validateImage(MultipartFile file) {
         if (file == null || file.isEmpty())
