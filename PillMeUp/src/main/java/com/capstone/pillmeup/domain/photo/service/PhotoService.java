@@ -102,6 +102,7 @@ public class PhotoService {
                 .confidence("1.0000")
                 .message("AI 분석 완료")
                 .itemSeqList(itemSeqList)
+                .historyId(history.getHistoryId())
                 .build();
     }
 	

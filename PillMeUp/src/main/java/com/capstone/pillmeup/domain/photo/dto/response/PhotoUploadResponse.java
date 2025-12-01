@@ -18,5 +18,7 @@ public class PhotoUploadResponse {
     private String confidence;   // 신뢰도 (AI 모델 도입 후 값 변경 예정)
     private String message;
     private List<String> itemSeqList;
+    
+    private Long historyId;
 	
 }
